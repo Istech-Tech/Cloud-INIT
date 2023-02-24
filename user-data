@@ -1,0 +1,207 @@
+#cloud-config
+autoinstall:
+  version: 1
+  refresh-installer:  # start with an up-to-date installer
+  update: yes
+  #interactive-sections:  # Install groups listed here will wait for user input
+  #  - storage
+  #storage:  # should set the interactive default but doesn't seem to work??
+  #  layout:
+  #    name: direct
+  locale: en_US.UTF-8
+  keyboard:
+    layout: us
+  identity:  # This is section you may want to add to interactive-sections  (user name and password are ubuntu here)
+    hostname: tacticalrmm
+    password: "$6$exDY1mhS4KUYCE/2$zmn9ToZwTKLhCw.b4/b.ZRTIZM30JZ4QrOQ2aOXJ8yk96xpcCof0kxKwuX1kqLG/ygbJ1f8wxED22bTL4F46P0"
+    username: tacticalrmm    
+  ssh:
+    allow-pw: true
+    install-server: true
+  apt:
+    sources:
+      ignored1:  # This is here to get the yaml formatting right when adding a ppa
+        source: ppa:graphics-drivers/ppa
+  packages: 
+#    - build-essential
+#    - network-manager
+#    - dkms
+#    - emacs-nox
+#    - tasksel
+#    - lynx 
+    - docker-compose
+    - nano
+    - joe
+    - net-tools
+    - nmap
+    - mc
+    - dialog
+ #    - gh
+  #  - tightvncserver
+  #- ubuntu-desktop-minimal^
+  package_update: true
+  package_upgrade: true
+  late-commands:
+    # Changing from networkd to NetworkManager
+    # move existing config out of the way
+    #- find /target/etc/netplan/ -name "*.yaml" -exec sh -c 'mv "$1" "$1-orig"' _ {} \;
+    # Create a new netplan and enable it
+    #- |
+    #  cat <<EOF | sudo tee /target/etc/netplan/01-netcfg.yaml
+    #  network:
+    #    version: 2
+    #    renderer: NetworkManager
+    #  EOF
+    #- curtin in-target --target /target netplan generate
+    #- curtin in-target --target /target netplan apply
+    #- curtin in-target --target /target systemctl enable NetworkManager.service
+    # Write a script that can take care of some post install setup "late-commands" cannot be interactive unfortunately"
+     - |
+       cat <<EOF | sudo tee /target/etc/finish-install-setup.sh
+       #!/usr/bin/env bash
+       echo *************************
+       echo ****  Finish Setup   ****
+       echo ************************* 
+       echo 'Enter the hostname for this system: '
+       read NEW_HOSTNAME
+       hostnamectl set-hostname \${NEW_HOSTNAME}
+       echo
+       echo 'Enter the timezone for this system: '
+       echo 'America/Los_Angeles America/Denver America/Chicago America/New_York'
+       read NEW_TIMEZONE
+       timedatectl set-timezone \${NEW_TIMEZONE}
+       echo *************************
+       echo
+       echo *************************
+       echo 'Restarting to finish ...'
+       shutdown -r 3
+       #EOF
+     - curtin in-target --target /target chmod 744 /etc/finish-install-setup.sh
+
+     - |
+       cat <<EOF | sudo tee /target/etc/certbot.install-setup.sh
+       #!/usr/bin/env bash
+       echo *************************
+       echo ****  Finish Setup   ****
+       echo *************************
+       echo 'Enter the hostname for this system: '
+       read NEW_HOSTNAME
+       hostnamectl set-hostname \${NEW_HOSTNAME}
+       echo
+       echo 'Enter the certname for this system: '
+       read Cert_Name
+       sudo certbot certonly --manual -d \${Cert_Name}  --agree-tos --no-bootstrap --manual-public-ip-logging-ok --preferred-challenges dns
+      
+       echo *************************
+       echo
+       echo *************************
+       echo 'Restarting to finish ...'
+       shutdown -r 3
+       #EOF
+     - curtin in-target --target /target chmod 744 /etc/certbot.install-setup.sh
+
+    #- ls -l > /target/root/ls.out
+    #- pwd > /target/root/pwd.out
+    #- mount > /target/root/mount.out
+    #- touch afile
+    #- cp afile /target/root/
+    #- ls -l / > /target/root/ls-root.out
+    #- ls -l /target > /target/root/ls-target.out
+    #- ls -l /target/cdrom > /target/root/ls-target-cdrom.out
+  user-data: # Commands here run during first boot (cannot be interactive)
+    runcmd:
+      # Install the NVIDIA driver from the ppa we setup earlier
+#      - [apt-get, install, --yes,  mc, --no-install-recommends]
+#      - mkdir /home/xibo/install]
+#      - cd /home/xibo/install]
+#      - wget wget https://github.com/xibosignage/xibo-cms/releases/download/3.0.3/xibo-docker.tar.gz
+#      - tar xf xibo-docker.tar.gz -C /home/xibo/ --strip-components=1 
+#      - tar -zxvf xibo-docker.tar.gz
+#      - cd xibo-docker-3.0.3
+#      - chown -v -R  xibo:xibo /home/xibo/install
+#      - su xibo  mkdir /home/xibo/install]
+#     - sudo chown -R $USER /home/xibo/install
+      - mkdir /home/tacticalrmm/theme
+      - git clone https://github.com/vinceliuice/grub2-themes.git
+      - cd grub2-themes
+      - ./install.sh -b -t tela
+      - mkdir /home/tacticalrmm/install
+      - mkdir /home/tacticalrmm/TRMM-Grafana
+#     - mkdir /home/xibo/install/xibo
+#     - cd /home/xibo/install
+#     - wget https://github.com/xibosignage/xibo-cms/releases/download/3.0.4/xibo-docker.tar.gz
+#     - tar xf xibo-docker.tar.gz -C xibo/ --strip-components=1
+#     - cd /home/xibo/install/xibo
+#     - sed -i 's/MYSQL_PASSWORD=/MYSQL_PASSWORD=password2020/g' config.env.template
+#     - cp config.env.template config.env
+#     - chown xibo:xibo -R -v /home/xibo/install
+#     - apt-get install gitsome -y
+      - apt-get install certbot -y
+      - cd /home/tacticalrmm/TRMM-Grafana
+      - git  clone https://github.com/dinger1986/TRMM-Grafana.git
+      - cd /home/tacticalrmm/install
+      - git clone https://github.com/piscue/docker-backup-scripts.git      
+      - git clone https://github.com/larseberhardt/TRMM-Docker-Backup-Script.git    
+#     - gh repo clone larseberhardt/TRMM-Docker-Backup-Script
+      - cd /home/tacticalrmm/install/TRMM-Docker-Backup-Script
+#     - cd docker-backup-scripts
+      - chmod +x *.sh
+      - cd /home/tacticalrmm/install     
+      - wget https://raw.githubusercontent.com/amidaware/tacticalrmm/master/docker/docker-compose.yml
+      - wget https://raw.githubusercontent.com/amidaware/tacticalrmm/master/docker/.env.example
+      - mv .env.example .env
+      - docker-compose up -d
+
+#      - su xibo mkdir xibo
+#     - chown -v -R  xibo:xibo /home/xibo/install      
+#     - su xibo	cd /home/xibo/install/xibo
+#     - su xibo cd /home/xibo/install/xibo]
+      - chown -v -R  tacticalrmm:tacticalrmm /home/tacticalrmm/install
+     
+#      - su xibo cd /
+#      - su xibo cd /home/xibo/install
+#      - su xibo cp config.env.template config.env
+      - adduser tacticalrmm  docker  
+#     - cp config.env.template config.env
+      - ufw allow 80
+      - ufw allow 443 
+      - ufw allow 4222
+      - ufw allow ssh
+      - ufw enable
+      - ufw status
+      
+
+
+#     - cd /home/xibo/installer touch /xibo.sh]
+      - |
+        #!/usr/bin/env bash
+        echo ''
+        echo '***************************************'
+        echo ' To complete install setup please run, '
+        echo ' sudo /etc/finish-install-setup.sh'
+        echo '***************************************'
+        echo ''
+#     - reboot 
+      - wget http://192.168.1.188/cloud-init/tacticalrmm/menu.sh -O /etc/menu.sh
+      - wget http://192.168.1.188/cloud-init/tacticalrmm/menu.py -O /etc/menu.py
+      - wget http://192.168.1.188/cloud-init/tacticalrmm/login.sh -O /etc/login.sh
+      - wget http://192.168.1.188/cloud-init/tacticalrmm/update.sh -O /etc/update.sh 
+      - wget http://192.168.1.188/cloud-init/tacticalrmm/restoredock.sh -O /etc/restoredock.sh
+
+      - chmod +x /etc/restoredock.sh
+      - chmod +x /etc/login.sh
+      - chmod +x /etc/update.sh
+      - chmod +x /etc/menu.py 
+      - chmod +x /etc/menu.sh
+      - chmod +x /etc/certbot.install-setup.sh
+      - wget -N https://raw.githubusercontent.com/amidaware/tacticalrmm/master/troubleshoot_server.sh /etc/troubleshoot_server.sh
+      - chmod +x troubleshoot_server.sh
+      - mkdir /home/tacticalrmm/backups
+      - set path backup_path="/home/tacticalrmm/backups"
+      - sudo usermod -s /etc/login.sh tacticalrmm
+      - chown  tacticalrmm:tacticalrmm /home/tacticalrmm/backups -R
+#      - sed -i 's/core/tacticalrmm/g' backup-all.sh 
+      - sed -i 's/core/tacticalrmm/g' /home/tacticalrmm/install/docker-backup-scripts/backup-all.sh 
+
+#     - sh /etc/certbot.install-setup.sh
+#      - bash /etc/menu.sh
