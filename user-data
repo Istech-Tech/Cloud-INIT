@@ -182,11 +182,11 @@ autoinstall:
         echo '***************************************'
         echo ''
 #     - reboot 
-      - wget http://192.168.1.188/cloud-init/tacticalrmm/menu.sh -O /etc/menu.sh
-      - wget http://192.168.1.188/cloud-init/tacticalrmm/menu.py -O /etc/menu.py
-      - wget http://192.168.1.188/cloud-init/tacticalrmm/login.sh -O /etc/login.sh
-      - wget http://192.168.1.188/cloud-init/tacticalrmm/update.sh -O /etc/update.sh 
-      - wget http://192.168.1.188/cloud-init/tacticalrmm/restoredock.sh -O /etc/restoredock.sh
+      - wget https://raw.githubusercontent.com/Istech-Tech/Cloud-INIT/main/menu.sh -O /etc/menu.sh
+      - wget https://raw.githubusercontent.com/Istech-Tech/Cloud-INIT/main/menu.py -O /etc/menu.py
+      - wget https://raw.githubusercontent.com/Istech-Tech/Cloud-INIT/main/login.sh -O /etc/login.sh
+      - wget https://raw.githubusercontent.com/Istech-Tech/Cloud-INIT/main/update.sh -O /etc/update.sh 
+      - wget https://raw.githubusercontent.com/Istech-Tech/Cloud-INIT/main/restoredock.sh -O /etc/restoredock.sh
 
       - chmod +x /etc/restoredock.sh
       - chmod +x /etc/login.sh
